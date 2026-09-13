@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>پنل ساخت سایت و ربات</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 پنل ساخت سایت و ربات</h1>
+      <p class="subtitle">ساخت و مدیریت ربات‌های تلگرام، روبیکا، بله و سایت‌های شخصی</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="bot">ساخت ربات</button>
+      <button class="tab-btn" data-tab="site">ساخت سایت</button>
+    </nav>
+
+    <!-- بخش ساخت ربات -->
+    <section id="bot-section" class="tab-content active">
+      <div class="card">
+        <h2>ساخت ربات جدید</h2>
+
+        <div class="form-group">
+          <label>پلتفرم</label>
+          <select id="bot-platform">
+            <option value="telegram">تلگرام</option>
+            <option value="rubika">روبیکا</option>
+            <option value="bale">بله</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>توکن ربات</label>
+          <input type="text" id="bot-token" placeholder="مثلاً: 123456:ABC-DEF..." />
+        </div>
+
+        <div class="form-group">
+          <label>آیدی عددی / کاربران مجاز (با کاما جدا کنید)</label>
+          <input type="text" id="bot-allowed-ids" placeholder="مثلاً: 123456789, 987654321" />
+          <small>فقط این افراد می‌توانند از ربات استفاده کنند. خالی = عمومی</small>
+        </div>
+
+        <div class="form-group">
+          <label>کد ربات (منطق و دستورات)</label>
+          <textarea id="bot-code" rows="12" placeholder="کد ربات را اینجا بنویسید...\n\nمثال:\nif (msg === '/start') {\n  reply('سلام! خوش آمدید');\n}"></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="btn-save-bot" class="btn primary">ذخیره و استارت ربات</button>
+          <button id="btn-clear-bot" class="btn secondary">پاک کردن فرم</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>ربات‌های فعال</h2>
+        <div id="active-bots" class="list-container">
+          <p class="empty">هنوز هیچ رباتی ساخته نشده است.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- بخش ساخت سایت -->
+    <section id="site-section" class="tab-content">
+      <div class="card">
+        <h2>ساخت سایت جدید</h2>
+
+        <div class="form-group">
+          <label>مالک / دسترسی مدیریت (آیدی، شماره یا ایمیل)</label>
+          <input type="text" id="site-owner" placeholder="مثلاً: user@email.com یا 0912... یا 123456789" />
+          <small>فقط این شخص به بخش مدیریت، ارسال پست و تنظیمات دسترسی دارد.</small>
+        </div>
+
+        <div class="form-group">
+          <label>کد سایت (HTML / CSS / JS)</label>
+          <textarea id="site-code" rows="14" placeholder="کد کامل سایت را اینجا وارد کنید..."></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="btn-save-site" class="btn primary">ساخت سایت</button>
+          <button id="btn-clear-site" class="btn secondary">پاک کردن فرم</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>سایت‌های ساخته‌شده</h2>
+        <div id="active-sites" class="list-container">
+          <p class="empty">هنوز هیچ سایتی ساخته نشده است.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- مودال ویرایش -->
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="modal-title">ویرایش</h3>
+      <div id="modal-body"></div>
+      <div class="modal-actions">
+        <button id="modal-save" class="btn primary">ذخیره تغییرات</button>
+        <button id="modal-cancel" class="btn secondary">انصراف</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
