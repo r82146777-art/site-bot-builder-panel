@@ -9,13 +9,13 @@
 </head>
 <body>
 
-  <!-- صفحه ورود / لندینگ -->
+  <!-- صفحه ورود -->
   <div id="landing" class="landing">
     <div class="landing-content">
       <h1>🚀 پنل ساخت سایت و ربات</h1>
-      <p>ساخت ربات‌های تلگرام، روبیکا، بله و سایت‌های شخصی — همه در یکجا</p>
+      <p>ساخت ربات‌های تلگرام، روبیکا، بله و سایت‌های شخصی</p>
       <button id="btn-enter" class="btn primary large">ورود به پنل</button>
-      <p class="note">بعد از ورود می‌توانید ربات و سایت بسازید و لینک مستقیم دریافت کنید</p>
+      <p class="note">لینک این پنل: <a href="https://r82146777-art.github.io/site-bot-builder-panel/" style="color:#38bdf8">https://r82146777-art.github.io/site-bot-builder-panel/</a></p>
     </div>
   </div>
 
@@ -32,6 +32,7 @@
     <nav class="tabs">
       <button class="tab-btn active" data-tab="bot">ساخت ربات</button>
       <button class="tab-btn" data-tab="site">ساخت سایت</button>
+      <button class="tab-btn" data-tab="test">تست</button>
     </nav>
 
     <!-- بخش ساخت ربات -->
@@ -56,13 +57,13 @@
         <div class="form-group">
           <label>آیدی عددی کاربران مجاز (با کاما جدا کنید)</label>
           <input type="text" id="bot-allowed-ids" placeholder="مثلاً: 123456789, 987654321" />
-          <small>خالی بگذارید = همه بتوانند استفاده کنند</small>
+          <small>خالی = همه بتوانند استفاده کنند</small>
         </div>
 
         <div class="form-group">
           <label>کد / منطق ربات</label>
-          <textarea id="bot-code" rows="10" placeholder="مثال ساده:\nif (text === '/start') return 'سلام! خوش آمدید';\nif (text.includes('سلام')) return 'علیک سلام';\nreturn 'پیام شما دریافت شد: ' + text;"></textarea>
-          <small>کد را به صورت ساده بنویسید. از متغیر text برای متن پیام کاربر استفاده کنید و با return پاسخ دهید.</small>
+          <textarea id="bot-code" rows="10" placeholder="مثال:\nif (text === '/start') return 'سلام! خوش آمدید';\nif (text.includes('سلام')) return 'علیک سلام';\nreturn 'پیام شما: ' + text;"></textarea>
+          <small>از متغیر text استفاده کنید و با return پاسخ بدهید.</small>
         </div>
 
         <div class="actions">
@@ -107,9 +108,40 @@
         </div>
       </div>
     </section>
+
+    <!-- تب تست -->
+    <section id="test-section" class="tab-content">
+      <div class="card">
+        <h2>تست ربات</h2>
+        <div class="form-group">
+          <label>انتخاب ربات برای تست</label>
+          <select id="test-bot-select"></select>
+        </div>
+        <div class="sim-area">
+          <div class="sim-messages" id="test-sim-messages"></div>
+          <div class="sim-input-row">
+            <input type="text" id="test-sim-input" placeholder="پیام تست بنویسید..." />
+            <button class="btn primary" id="btn-test-sim">ارسال</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>پیش‌نمایش سایت</h2>
+        <div class="form-group">
+          <label>انتخاب سایت برای پیش‌نمایش</label>
+          <select id="test-site-select"></select>
+        </div>
+        <div class="actions" style="margin-bottom:12px">
+          <button class="btn primary" id="btn-preview-site">باز کردن پیش‌نمایش</button>
+          <button class="btn secondary" id="btn-copy-site-link">کپی لینک</button>
+        </div>
+        <iframe id="site-preview-frame" style="width:100%;height:360px;border:1px solid rgba(148,163,184,0.2);border-radius:10px;background:#fff;display:none"></iframe>
+      </div>
+    </section>
   </div>
 
-  <!-- مودال جزئیات ربات (دانلود کد + شبیه‌ساز) -->
+  <!-- مودال جزئیات ربات -->
   <div id="bot-modal" class="modal hidden">
     <div class="modal-content large">
       <h3 id="bot-modal-title">ربات آماده شد</h3>

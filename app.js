@@ -12,7 +12,6 @@ document.getElementById('btn-enter').addEventListener('click', () => {
   landing.classList.add('hidden');
   panel.classList.remove('hidden');
 });
-
 document.getElementById('btn-logout').addEventListener('click', () => {
   panel.classList.add('hidden');
   landing.classList.remove('hidden');
@@ -25,6 +24,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab + '-section').classList.add('active');
+    if (btn.dataset.tab === 'test') refreshTestSelects();
   });
 });
 
@@ -46,6 +46,12 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+function ensureBlobUrl(site) {
+  if (site.blobUrl) return site.blobUrl;
+  const blob = new Blob([site.code], { type: 'text/html' });
+  site.blobUrl = URL.createObjectURL(blob);
+  return site.blobUrl;
 }
 
 // ========== رندر ربات‌ها ==========
@@ -79,13 +85,17 @@ function renderSites() {
     return;
   }
   container.innerHTML = sites.map((site, i) => {
-    const blobUrl = site.blobUrl || '';
+    const url = ensureBlobUrl(site);
     return `
     <div class="item">
       <div class="item-info">
         <h4>سایت ${i + 1}</h4>
         <p>مالک: ${escapeHtml(site.owner) || '—'}</p>
-        ${blobUrl ? `<div class="link-box"><a href="${blobUrl}" target="_blank">باز کردن سایت</a> &nbsp;|&nbsp; <button class="btn success" style="padding:2px 8px;font-size:0.75rem" onclick="copyText('${blobUrl}')">کپی لینک</button></div>` : ''}
+        <div class="link-box">
+          <a href="${url}" target="_blank" rel="noopener">باز کردن سایت</a>
+          &nbsp;|&nbsp;
+          <button class="btn success" style="padding:2px 8px;font-size:0.75rem" onclick="copyText('${url}')">کپی لینک</button>
+        </div>
       </div>
       <div class="item-actions">
         <button class="btn success" onclick="openSite('${site.id}')">باز کردن</button>
@@ -94,6 +104,7 @@ function renderSites() {
       </div>
     </div>`;
   }).join('');
+  localStorage.setItem('sites', JSON.stringify(sites));
 }
 
 // ========== ساخت ربات ==========
@@ -103,10 +114,7 @@ document.getElementById('btn-save-bot').addEventListener('click', () => {
   const allowedIds = document.getElementById('bot-allowed-ids').value.trim();
   const code = document.getElementById('bot-code').value.trim();
 
-  if (!token) {
-    alert('توکن ربات را وارد کنید.');
-    return;
-  }
+  if (!token) { alert('توکن ربات را وارد کنید.'); return; }
 
   const bot = {
     id: generateId(),
@@ -137,12 +145,8 @@ document.getElementById('btn-save-site').addEventListener('click', () => {
   const owner = document.getElementById('site-owner').value.trim();
   let code = document.getElementById('site-code').value.trim();
 
-  if (!code) {
-    alert('کد سایت را وارد کنید.');
-    return;
-  }
+  if (!code) { alert('کد سایت را وارد کنید.'); return; }
 
-  // اگر فقط تگ body داده شده، کاملش کنیم
   if (!code.toLowerCase().includes('<html')) {
     code = `<!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -174,9 +178,8 @@ ${code}
   renderSites();
   clearSiteForm();
 
-  // باز کردن خودکار در تب جدید
   window.open(blobUrl, '_blank');
-  alert('سایت ساخته شد!\nلینک در لیست سایت‌ها قرار گرفت. می‌توانید کپی کنید یا دوباره باز کنید.');
+  alert('سایت ساخته شد!\nلینک در لیست قرار گرفت. می‌توانید کپی کنید.');
 });
 
 document.getElementById('btn-clear-site').addEventListener('click', clearSiteForm);
@@ -187,16 +190,9 @@ function clearSiteForm() {
 
 function openSite(id) {
   const site = sites.find(s => s.id === id);
-  if (site && site.blobUrl) {
-    window.open(site.blobUrl, '_blank');
-  } else if (site) {
-    // بازسازی blob اگر لازم باشد
-    const blob = new Blob([site.code], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    site.blobUrl = url;
-    localStorage.setItem('sites', JSON.stringify(sites));
-    window.open(url, '_blank');
-  }
+  if (!site) return;
+  const url = ensureBlobUrl(site);
+  window.open(url, '_blank');
 }
 
 function copyText(text) {
@@ -205,7 +201,63 @@ function copyText(text) {
   });
 }
 
-// ========== جزئیات ربات (کد آماده + شبیه‌ساز) ==========
+// ========== تب تست ==========
+function refreshTestSelects() {
+  const botSel = document.getElementById('test-bot-select');
+  const siteSel = document.getElementById('test-site-select');
+
+  botSel.innerHTML = bots.length
+    ? bots.map((b, i) => `<option value="${b.id}">ربات ${i + 1} (${platformName(b.platform)})</option>`).join('')
+    : '<option value="">رباتی وجود ندارد</option>';
+
+  siteSel.innerHTML = sites.length
+    ? sites.map((s, i) => `<option value="${s.id}">سایت ${i + 1}</option>`).join('')
+    : '<option value="">سایتی وجود ندارد</option>';
+}
+
+document.getElementById('btn-test-sim').addEventListener('click', () => {
+  const id = document.getElementById('test-bot-select').value;
+  const bot = bots.find(b => b.id === id);
+  if (!bot) { alert('رباتی انتخاب نشده.'); return; }
+
+  const input = document.getElementById('test-sim-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const messages = document.getElementById('test-sim-messages');
+  messages.innerHTML += `<div class="sim-msg user">شما: ${escapeHtml(text)}</div>`;
+
+  let reply = 'پاسخی تولید نشد';
+  try {
+    const fn = new Function('text', bot.code.includes('return') ? bot.code : `return (${bot.code})`);
+    reply = fn(text);
+  } catch (e) {
+    reply = 'خطا در کد: ' + e.message;
+  }
+
+  messages.innerHTML += `<div class="sim-msg bot">ربات: ${escapeHtml(String(reply))}</div>`;
+  messages.scrollTop = messages.scrollHeight;
+  input.value = '';
+});
+
+document.getElementById('btn-preview-site').addEventListener('click', () => {
+  const id = document.getElementById('test-site-select').value;
+  const site = sites.find(s => s.id === id);
+  if (!site) { alert('سایتی انتخاب نشده.'); return; }
+  const url = ensureBlobUrl(site);
+  const frame = document.getElementById('site-preview-frame');
+  frame.src = url;
+  frame.style.display = 'block';
+});
+
+document.getElementById('btn-copy-site-link').addEventListener('click', () => {
+  const id = document.getElementById('test-site-select').value;
+  const site = sites.find(s => s.id === id);
+  if (!site) { alert('سایتی انتخاب نشده.'); return; }
+  copyText(ensureBlobUrl(site));
+});
+
+// ========== جزئیات ربات ==========
 function openBotDetails(id) {
   const bot = bots.find(b => b.id === id);
   if (!bot) return;
@@ -215,37 +267,23 @@ function openBotDetails(id) {
   document.getElementById('bot-modal-title').textContent = `ربات ${platformName(bot.platform)} آماده است`;
   document.getElementById('bot-modal-body').innerHTML = `
     <p style="margin-bottom:12px;color:#94a3b8;font-size:0.9rem;">
-      چون مرورگر نمی‌تواند ربات را همیشه روشن نگه دارد، کد آماده پایتون برایتان ساخته شد.
-      فقط یک‌بار آن را روی کامپیوتر یا سرور رایگان اجرا کنید تا ربات در تلگرام پاسخ دهد.
+      کد آماده پایتون ساخته شد. آن را دانلود و روی کامپیوتر یا سرور رایگان اجرا کنید تا ربات در تلگرام/روبیکا/بله پاسخ دهد.
     </p>
-
-    <h4 style="margin:14px 0 6px;">۱. دانلود کد آماده</h4>
+    <h4 style="margin:14px 0 6px;">دانلود کد</h4>
     <button class="btn primary" onclick="downloadBotCode('${bot.id}')">دانلود فایل bot.py</button>
-
-    <h4 style="margin:18px 0 6px;">۲. نحوه اجرا (خیلی ساده)</h4>
+    <h4 style="margin:18px 0 6px;">نحوه اجرا</h4>
     <ol style="padding-right:20px;color:#cbd5e1;font-size:0.9rem;line-height:1.8;">
-      <li>پایتون را نصب کنید (از python.org)</li>
-      <li>در ترمینال بنویسید: <code style="background:#0f172a;padding:2px 6px;border-radius:4px;">pip install python-telegram-bot</code></li>
-      <li>فایل دانلودشده را اجرا کنید: <code style="background:#0f172a;padding:2px 6px;border-radius:4px;">python bot.py</code></li>
+      <li>پایتون را نصب کنید</li>
+      <li><code style="background:#0f172a;padding:2px 6px;border-radius:4px;">pip install python-telegram-bot</code></li>
+      <li><code style="background:#0f172a;padding:2px 6px;border-radius:4px;">python bot.py</code></li>
     </ol>
-
-    <h4 style="margin:18px 0 6px;">۳. شبیه‌ساز تست (همین‌جا)</h4>
-    <div class="sim-area">
-      <div class="sim-messages" id="sim-messages"></div>
-      <div class="sim-input-row">
-        <input type="text" id="sim-input" placeholder="پیام تست بنویسید..." />
-        <button class="btn primary" onclick="runSim('${bot.id}')">ارسال</button>
-      </div>
-    </div>
-
-    <h4 style="margin:18px 0 6px;">کد تولیدشده (برای کپی)</h4>
+    <h4 style="margin:18px 0 6px;">کد تولیدشده</h4>
     <div class="code-block" id="code-preview">${escapeHtml(pythonCode)}</div>
     <button class="btn secondary" onclick="copyCode()">کپی کل کد</button>
   `;
 
   document.getElementById('bot-modal').classList.remove('hidden');
   window.currentBotCode = pythonCode;
-  window.currentBotId = id;
 }
 
 function generatePythonBot(bot) {
@@ -253,33 +291,28 @@ function generatePythonBot(bot) {
     ? bot.allowedIds.split(',').map(s => s.trim()).filter(Boolean)
     : [];
   const allowedStr = allowed.length ? JSON.stringify(allowed) : 'None';
-
-  // تبدیل کد ساده کاربر به پایتون
   let userLogic = bot.code || '';
-  // اگر کد ساده if/return باشد آن را داخل تابع می‌گذاریم
-  userLogic = userLogic.replace(/return /g, 'return ');
 
   return `from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
-import re
 
 TOKEN = "${bot.token}"
-ALLOWED_IDS = ${allowedStr}  # None = همه مجاز
+ALLOWED_IDS = ${allowedStr}
 
 def process_message(text: str) -> str:
-    """منطق ربات شما"""
     text = text or ""
     try:
 ${userLogic.split('\n').map(l => '        ' + l).join('\n')}
     except Exception as e:
-        return f"خطا در پردازش: {e}"
+        return f"خطا: {e}"
     return "پیام دریافت شد"
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id if update.effective_user else 0
-    if ALLOWED_IDS is not None and str(user_id) not in ALLOWED_IDS and user_id not in [int(x) for x in ALLOWED_IDS if x.isdigit()]:
-        return  # کاربر مجاز نیست
-
+    if ALLOWED_IDS is not None:
+        allowed = [str(x) for x in ALLOWED_IDS]
+        if str(user_id) not in allowed:
+            return
     text = update.message.text if update.message else ""
     reply = process_message(text)
     if reply:
@@ -287,8 +320,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    app.add_handler(MessageHandler(filters.COMMAND, handle))
+    app.add_handler(MessageHandler(filters.TEXT | filters.COMMAND, handle))
     print("ربات روشن شد...")
     app.run_polling()
 
@@ -314,30 +346,6 @@ function copyCode() {
   if (window.currentBotCode) {
     navigator.clipboard.writeText(window.currentBotCode).then(() => alert('کد کپی شد!'));
   }
-}
-
-function runSim(id) {
-  const bot = bots.find(b => b.id === id);
-  if (!bot) return;
-  const input = document.getElementById('sim-input');
-  const text = input.value.trim();
-  if (!text) return;
-
-  const messages = document.getElementById('sim-messages');
-  messages.innerHTML += `<div class="sim-msg user">شما: ${escapeHtml(text)}</div>`;
-
-  let reply = 'پاسخی تولید نشد';
-  try {
-    // اجرای امن‌تر کد کاربر
-    const fn = new Function('text', bot.code.includes('return') ? bot.code : `return (${bot.code})`);
-    reply = fn(text);
-  } catch (e) {
-    reply = 'خطا در کد: ' + e.message;
-  }
-
-  messages.innerHTML += `<div class="sim-msg bot">ربات: ${escapeHtml(String(reply))}</div>`;
-  messages.scrollTop = messages.scrollHeight;
-  input.value = '';
 }
 
 document.getElementById('bot-modal-close').addEventListener('click', () => {
@@ -422,7 +430,6 @@ document.getElementById('modal-save').addEventListener('click', () => {
     if (site) {
       site.owner = document.getElementById('edit-owner').value.trim();
       site.code = document.getElementById('edit-code').value;
-      // بازسازی blob
       const blob = new Blob([site.code], { type: 'text/html' });
       site.blobUrl = URL.createObjectURL(blob);
       localStorage.setItem('sites', JSON.stringify(sites));
