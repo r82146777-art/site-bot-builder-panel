@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>پنل ساخت سایت و ربات</title>
+  <title>پنل ساخت ربات و سایت</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
   <div id="landing" class="landing">
     <div class="landing-content">
-      <h1>🚀 پنل ساخت سایت و ربات</h1>
-      <p>ساخت ربات روبیکا روی گیت‌هاب — هر ۵ دقیقه پاسخ می‌دهد</p>
+      <h1>🚀 پنل ساخت ربات و سایت</h1>
+      <p>روبیکا · تلگرام · بله — روی گیت‌هاب خودتان</p>
       <button id="btn-enter" class="btn primary large">ورود به پنل</button>
     </div>
   </div>
@@ -20,113 +19,196 @@
   <div id="panel" class="container hidden">
     <header>
       <div class="header-top">
-        <h1>پنل ساخت سایت و ربات</h1>
+        <h1>پنل ساخت ربات و سایت</h1>
         <button id="btn-logout" class="btn secondary small">خروج</button>
       </div>
-      <p class="subtitle">توکن و کد را بزنید → استارت → ربات روی گیت‌هاب فعال می‌شود</p>
+      <p class="subtitle" id="conn-label">ابتدا از تب تنظیمات گیت‌هاب متصل شوید</p>
     </header>
 
     <nav class="tabs">
       <button class="tab-btn active" data-tab="bot">ساخت ربات</button>
       <button class="tab-btn" data-tab="site">ساخت سایت</button>
       <button class="tab-btn" data-tab="settings">تنظیمات گیت‌هاب</button>
+      <button class="tab-btn" data-tab="test">تست / پیش‌نمایش</button>
     </nav>
 
-    <!-- تنظیمات: یک‌بار توکن گیت‌هاب -->
-    <section id="settings-section" class="tab-content">
-      <div class="card">
-        <h2>اتصال به گیت‌هاب (فقط یک‌بار)</h2>
-        <p style="color:#94a3b8;font-size:0.9rem;margin-bottom:14px">
-          توکن گیت‌هاب فقط در مرورگر خودتان (localStorage) ذخیره می‌شود و به جایی ارسال نمی‌شود.
-          با این توکن، وقتی روی استارت بزنید ربات روی مخزن خصوصی‌تان فعال می‌شود.
-        </p>
-        <div class="form-group">
-          <label>GitHub Personal Access Token</label>
-          <input type="password" id="gh-token" placeholder="ghp_..." />
-          <small>دسترسی repo لازم است. از Settings → Developer settings → Tokens</small>
-        </div>
-        <div class="form-group">
-          <label>نام کاربری گیت‌هاب</label>
-          <input type="text" id="gh-owner" value="r82146777-art" />
-        </div>
-        <div class="actions">
-          <button id="btn-save-gh" class="btn primary">ذخیره تنظیمات</button>
-        </div>
-        <p id="gh-status" style="margin-top:12px;color:#34d399;font-size:0.9rem"></p>
-      </div>
-    </section>
-
-    <!-- ساخت ربات -->
+    <!-- ========== تب ساخت ربات ========== -->
     <section id="bot-section" class="tab-content active">
       <div class="card">
-        <h2>ساخت و استارت ربات روبیکا</h2>
+        <h2>ساخت ربات جدید</h2>
+
         <div class="form-group">
           <label>پلتفرم</label>
           <select id="bot-platform">
-            <option value="rubika" selected>روبیکا</option>
-            <option value="telegram">تلگرام (فقط دانلود کد)</option>
-            <option value="bale">بله (فقط دانلود کد)</option>
+            <option value="rubika">روبیکا</option>
+            <option value="telegram">تلگرام</option>
+            <option value="bale">بله</option>
           </select>
         </div>
+
         <div class="form-group">
-          <label>توکن ربات روبیکا</label>
-          <input type="text" id="bot-token" placeholder="توکن از BotFather روبیکا" />
+          <label>توکن ربات</label>
+          <input type="text" id="bot-token" placeholder="توکن از BotFather" />
         </div>
+
         <div class="form-group">
-          <label>آیدی‌های مجاز (اختیاری — با کاما)</label>
-          <input type="text" id="bot-allowed-ids" placeholder="خالی = همه" />
+          <label>آیدی عددی مالک (اختیاری)</label>
+          <input type="text" id="bot-owner-id" placeholder="مثلاً u0... یا عدد تلگرام" />
+          <small>اگر پر شود فقط این آیدی به دستورات مدیریتی دسترسی دارد</small>
         </div>
+
         <div class="form-group">
           <label>کد / منطق ربات</label>
-          <textarea id="bot-code" rows="12" placeholder="برای ربات آیدی‌دهنده همین کد پیش‌فرض کافی است (می‌توانید خالی بگذارید).&#10;&#10;اگر کد سفارشی می‌نویسید، از text استفاده کنید و return بدهید."></textarea>
-          <small>برای آیدی‌دهنده خالی بگذارید تا کد آماده آیدی استفاده شود. ربات هر ۵ دقیقه پیام‌ها را چک می‌کند.</small>
+          <textarea id="bot-code" rows="8" placeholder="خالی = ربات آیدی‌دهنده پیش‌فرض (روبیکا)&#10;یا کد سفارشی با text و return"></textarea>
         </div>
+
+        <div class="form-group">
+          <label>نوع مخزن گیت‌هاب</label>
+          <div class="check-row">
+            <label class="check"><input type="radio" name="bot-visibility" value="private" checked /> خصوصی</label>
+            <label class="check"><input type="radio" name="bot-visibility" value="public" /> عمومی</label>
+          </div>
+        </div>
+
+        <h3 class="subhead">⚙️ تنظیمات زمان‌بندی و ارسال</h3>
+
+        <div class="form-group">
+          <label>فاصله پاسخ / اجرای ربات</label>
+          <select id="bot-interval">
+            <option value="5">هر ۵ دقیقه</option>
+            <option value="10">هر ۱۰ دقیقه</option>
+            <option value="15">هر ۱۵ دقیقه</option>
+            <option value="30">هر ۳۰ دقیقه</option>
+            <option value="60">هر ۱ ساعت</option>
+            <option value="120">هر ۲ ساعت</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="check">
+            <input type="checkbox" id="bot-heartbeat" />
+            ❤️ قلب تپنده — بازه را روی حداقل (۵ دقیقه) نگه می‌دارد تا سریع‌تر جواب دهد
+          </label>
+          <small>با فعال بودن، هر ۵ دقیقه ربات روی گیت‌هاب روشن می‌شود و پیام‌های جدید را جواب می‌دهد</small>
+        </div>
+
+        <div class="form-group">
+          <label>پنجره زمانی ارسال محتوا (ساعت ۲۴)</label>
+          <div class="row-2">
+            <div>
+              <small>از ساعت</small>
+              <input type="number" id="bot-from-hour" min="0" max="23" value="0" />
+            </div>
+            <div>
+              <small>تا ساعت</small>
+              <input type="number" id="bot-to-hour" min="0" max="23" value="23" />
+            </div>
+          </div>
+          <small>مثلاً ۸ تا ۲۳ یعنی فقط در این بازه کار کند (۰ تا ۲۳ = همیشه)</small>
+        </div>
+
+        <div class="form-group">
+          <label>آیدی کانال / گروه برای ارسال محتوا (اختیاری)</label>
+          <input type="text" id="bot-channel-id" placeholder="خالی بگذارید اگر فقط پاسخ خصوصی می‌خواهید" />
+          <small>اگر ربات را ادمین کانال/گروه کنید با دسترسی ارسال پیام، می‌تواند آنجا هم پست بفرستد. پر کردن این فیلد برای هدف‌گیری صریح است.</small>
+        </div>
+
         <div class="actions">
-          <button id="btn-save-bot" class="btn primary">استارت ربات روی گیت‌هاب</button>
-          <button id="btn-clear-bot" class="btn secondary">پاک کردن</button>
+          <button id="btn-save-bot" class="btn primary">ساخت و استارت روی گیت‌هاب</button>
+          <button id="btn-clear-bot" class="btn secondary">پاک کردن فرم</button>
         </div>
-        <p id="deploy-status" style="margin-top:12px;font-size:0.9rem"></p>
+        <p id="deploy-status" class="status-line"></p>
       </div>
 
       <div class="card">
-        <h2>ربات‌های فعال</h2>
-        <div id="active-bots" class="list-container">
-          <p class="empty">هنوز رباتی ساخته نشده.</p>
-        </div>
+        <h2>ربات‌های ساخته‌شده</h2>
+        <div id="active-bots" class="list-container"><p class="empty">هنوز رباتی نیست.</p></div>
       </div>
     </section>
 
-    <!-- ساخت سایت -->
+    <!-- ========== تب ساخت سایت ========== -->
     <section id="site-section" class="tab-content">
       <div class="card">
-        <h2>ساخت سایت</h2>
+        <h2>ساخت سایت روی گیت‌هاب</h2>
         <div class="form-group">
-          <label>مالک</label>
-          <input type="text" id="site-owner" />
+          <label>نام مخزن سایت (انگلیسی)</label>
+          <input type="text" id="site-repo-name" placeholder="مثلاً my-shop" />
         </div>
         <div class="form-group">
-          <label>کد HTML</label>
-          <textarea id="site-code" rows="12"></textarea>
+          <label>مالک / ایمیل دسترسی</label>
+          <input type="text" id="site-owner" placeholder="اختیاری" />
+        </div>
+        <div class="form-group">
+          <label>کد HTML کامل سایت</label>
+          <textarea id="site-code" rows="12" placeholder="<!DOCTYPE html>..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>نوع مخزن</label>
+          <div class="check-row">
+            <label class="check"><input type="radio" name="site-visibility" value="public" checked /> عمومی (برای GitHub Pages بهتر است)</label>
+            <label class="check"><input type="radio" name="site-visibility" value="private" /> خصوصی</label>
+          </div>
         </div>
         <div class="actions">
-          <button id="btn-save-site" class="btn primary">ساخت سایت</button>
+          <button id="btn-save-site" class="btn primary">ساخت سایت روی گیت‌هاب</button>
         </div>
+        <p id="site-deploy-status" class="status-line"></p>
       </div>
       <div class="card">
         <h2>سایت‌های ساخته‌شده</h2>
         <div id="active-sites" class="list-container"><p class="empty">خالی</p></div>
       </div>
     </section>
-  </div>
 
-  <div id="bot-modal" class="modal hidden">
-    <div class="modal-content large">
-      <h3 id="bot-modal-title">وضعیت</h3>
-      <div id="bot-modal-body"></div>
-      <div class="modal-actions">
-        <button id="bot-modal-close" class="btn secondary">بستن</button>
+    <!-- ========== تب تنظیمات گیت‌هاب ========== -->
+    <section id="settings-section" class="tab-content">
+      <div class="card">
+        <h2>اتصال به گیت‌هاب شما</h2>
+        <p class="hint">
+          با ذخیره توکن، تمام ربات‌ها و سایت‌ها روی <strong>حساب گیت‌هاب خودتان</strong> ساخته می‌شوند — نه روی حساب سازنده پنل.
+          می‌توانید این لینک پنل را به دوستان بدهید؛ هر کس با توکن خودش متصل می‌شود.
+        </p>
+        <div class="form-group">
+          <label>۱) GitHub Personal Access Token</label>
+          <input type="password" id="gh-token" placeholder="ghp_..." />
+          <small>از GitHub → Settings → Developer settings → Personal access tokens — دسترسی repo لازم است</small>
+        </div>
+        <div class="form-group">
+          <label>۲) نام کاربری گیت‌هاب (login)</label>
+          <input type="text" id="gh-owner" placeholder="مثلاً myusername" />
+        </div>
+        <div class="form-group">
+          <label>۳) ایمیل گیت‌هاب (اختیاری — برای شناسایی)</label>
+          <input type="email" id="gh-email" placeholder="email@example.com" />
+        </div>
+        <div class="actions">
+          <button id="btn-save-gh" class="btn primary">ذخیره و اتصال</button>
+          <button id="btn-test-gh" class="btn secondary">تست اتصال</button>
+        </div>
+        <p id="gh-status" class="status-line"></p>
       </div>
-    </div>
+    </section>
+
+    <!-- ========== تب تست ========== -->
+    <section id="test-section" class="tab-content">
+      <div class="card">
+        <h2>پیش‌نمایش سایت (بدون گیت‌هاب)</h2>
+        <p class="hint">اگر ساخت روی گیت‌هاب ممکن نبود، کد را اینجا نگه دارید و پیش‌نمایش بگیرید.</p>
+        <div class="form-group">
+          <label>کد HTML</label>
+          <textarea id="test-site-code" rows="10"></textarea>
+        </div>
+        <div class="actions">
+          <button id="btn-test-preview" class="btn primary">پیش‌نمایش</button>
+          <button id="btn-test-save-local" class="btn secondary">ذخیره محلی در پنل</button>
+        </div>
+        <iframe id="site-preview-frame" title="preview" style="display:none;width:100%;height:360px;margin-top:12px;border-radius:10px;border:1px solid rgba(148,163,184,0.2);background:#fff"></iframe>
+      </div>
+      <div class="card">
+        <h2>سایت‌های محلی پنل</h2>
+        <div id="local-sites" class="list-container"><p class="empty">خالی</p></div>
+      </div>
+    </section>
   </div>
 
   <script src="app.js"></script>
