@@ -33,10 +33,6 @@ function maskToken(t) {
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 
 function loadGhSettings() {
   document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
@@ -87,21 +83,23 @@ function renderSites() {
   `).join('');
 }
 
-// کد آماده ربات آیدی‌دهنده روبیکا برای Actions
-function buildRubikaIdBotPy(token) {
+function buildRubikaBotPy(token) {
+  // توکن داخل فایل خصوصی قرار می‌گیرد تا بدون Secret هم کار کند
   return `# -*- coding: utf-8 -*-
 import json, os
 from pathlib import Path
 import requests
 
-TOKEN = os.environ.get("BOT_TOKEN", "${token}").strip()
+TOKEN = os.environ.get("BOT_TOKEN", "").strip() or """${token.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"""
 BASE = f"https://botapi.rubika.ir/v3/{TOKEN}"
 STATE_FILE = Path("state.json")
 
 def load_state():
     if STATE_FILE.exists():
-        try: return json.loads(STATE_FILE.read_text(encoding="utf-8"))
-        except: pass
+        try:
+            return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
     return {"offset_id": None, "processed": []}
 
 def save_state(state):
@@ -121,19 +119,22 @@ def send_message(chat_id, text):
         return None
 
 def type_label(t):
-    return {"User":"کاربر","Channel":"کانال","Bot":"ربات","Group":"گروه",
-            "user":"کاربر","channel":"کانال","bot":"ربات","group":"گروه"}.get(str(t), str(t) or "نامشخص")
+    m = {"User":"کاربر","Channel":"کانال","Bot":"ربات","Group":"گروه","user":"کاربر","channel":"کانال","bot":"ربات","group":"گروه"}
+    return m.get(str(t), str(t) if t else "نامشخص")
 
 def handle_update(update, state):
-    if not isinstance(update, dict): return
+    if not isinstance(update, dict):
+        return
     if "update" in update and isinstance(update["update"], dict):
         update = update["update"]
     chat_id = update.get("chat_id")
     msg = update.get("new_message") or update.get("message") or {}
-    if not chat_id or not msg: return
+    if not chat_id or not msg:
+        return
     message_id = str(msg.get("message_id") or "")
     key = f"{chat_id}:{message_id}"
-    if message_id and key in state.get("processed", []): return
+    if message_id and key in state.get("processed", []):
+        return
     text = (msg.get("text") or "").strip()
     sender_id = msg.get("sender_id") or ""
     forwarded = msg.get("forwarded_from")
@@ -143,45 +144,70 @@ def handle_update(update, state):
         from_sender = forwarded.get("from_sender_id") or ""
         orig_msg_id = forwarded.get("message_id") or ""
         type_from = forwarded.get("type_from") or ""
-        lines = ["✅ اطلاعات پیام فورواردشده:", "", f"📌 نوع منبع: {type_label(type_from)}",
-                 f"🆔 آیدی چت مبدأ:", f"`{from_chat}`", "", f"👤 آیدی فرستنده اصلی:",
-                 f"`{from_sender}`" if from_sender else "—", "", f"📩 آیدی پیام:",
-                 f"`{orig_msg_id}`" if orig_msg_id else "—"]
+        lines = [
+            "✅ اطلاعات پیام فورواردشده:",
+            "",
+            "📌 نوع منبع: " + type_label(type_from),
+            "🆔 آیدی چت مبدأ (گروه/کانال/کاربر):",
+            "\`" + from_chat + "\`",
+            "",
+            "👤 آیدی فرستنده اصلی:",
+            ("\`" + from_sender + "\`") if from_sender else "—",
+            "",
+            "📩 آیدی پیام اصلی:",
+            ("\`" + orig_msg_id + "\`") if orig_msg_id else "—",
+        ]
         send_message(chat_id, "\\n".join(lines))
         replied = True
     else:
         low = text.lower()
         if low in ("/start", "start", "استارت", "/id", "id", "آیدی", "ایدی"):
-            lines = ["👋 سلام! ربات آیدی‌دهنده.", "", "🔹 آیدی شما:", f"`{sender_id}`", "",
-                     "🔹 آیدی این چت:", f"`{chat_id}`", "", "📌 پیام گروه/کانال را فوروارد کنید.",
-                     "", "⏱️ هر چند دقیقه یک‌بار چک می‌شود."]
+            lines = [
+                "👋 سلام! ربات آیدی‌دهنده هستم.",
+                "",
+                "🔹 آیدی عددی شما:",
+                "\`" + sender_id + "\`",
+                "",
+                "🔹 آیدی این چت:",
+                "\`" + chat_id + "\`",
+                "",
+                "📌 برای آیدی گروه/کانال: یک پیام از آن را فوروارد کنید.",
+                "",
+                "⏱️ هر چند دقیقه یک‌بار پیام‌ها چک می‌شود.",
+            ]
             send_message(chat_id, "\\n".join(lines))
             replied = True
         elif text:
-            send_message(chat_id, f"آیدی شما: `{sender_id}`\\n\\n/start بزنید یا پیام فوروارد کنید.")
+            send_message(chat_id, "آیدی شما: \`" + sender_id + "\`\\n\\n/start بزنید یا پیام فوروارد کنید.")
             replied = True
     if replied and message_id:
         state.setdefault("processed", []).append(key)
 
 def main():
     if not TOKEN:
-        print("no token"); return
+        print("no token")
+        return
     print("start")
     state = load_state()
     offset_id = state.get("offset_id")
     try:
         payload = {"limit": 50}
-        if offset_id: payload["offset_id"] = offset_id
+        if offset_id:
+            payload["offset_id"] = offset_id
         res = api("getUpdates", payload)
         data = res.get("data") if isinstance(res.get("data"), dict) else res
         updates = data.get("updates") or data.get("update_list") or []
         next_offset = data.get("next_offset_id") or data.get("offset_id")
         print("updates", len(updates))
         for u in updates:
-            try: handle_update(u, state)
-            except Exception as e: print("err", e)
-        if next_offset: state["offset_id"] = next_offset
+            try:
+                handle_update(u, state)
+            except Exception as e:
+                print("err", e)
+        if next_offset:
+            state["offset_id"] = next_offset
         save_state(state)
+        print("done")
     except Exception as e:
         print("fatal", e)
         save_state(state)
@@ -209,8 +235,6 @@ jobs:
           python-version: '3.11'
       - run: pip install requests
       - name: Run bot
-        env:
-          BOT_TOKEN: \\${{ secrets.BOT_TOKEN }}
         run: python bot.py
       - name: Save state
         run: |
@@ -238,31 +262,35 @@ async function ghApi(path, method, body) {
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { data = { raw: text }; }
-  if (!res.ok) throw new Error(data.message || text || res.status);
+  if (!res.ok) throw new Error(data.message || text || String(res.status));
   return data;
+}
+
+function toBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
 }
 
 async function putFile(owner, repo, path, content, message) {
   let sha;
   try {
-    const existing = await ghApi(`/repos/${owner}/${repo}/contents/${path}`);
+    const existing = await ghApi('/repos/' + owner + '/' + repo + '/contents/' + path);
     sha = existing.sha;
   } catch (e) {}
   const body = {
-    message: message || 'update ' + path,
-    content: btoa(unescape(encodeURIComponent(content))),
+    message: message || ('update ' + path),
+    content: toBase64(content),
     branch: 'main'
   };
   if (sha) body.sha = sha;
-  return ghApi(`/repos/${owner}/${repo}/contents/${path}`, 'PUT', body);
+  return ghApi('/repos/' + owner + '/' + repo + '/contents/' + path, 'PUT', body);
 }
 
 async function ensureRepo(owner, name) {
   try {
-    return await ghApi(`/repos/${owner}/${name}`);
+    return await ghApi('/repos/' + owner + '/' + name);
   } catch (e) {
     return ghApi('/user/repos', 'POST', {
-      name,
+      name: name,
       private: true,
       auto_init: true,
       description: 'ربات روبیکا — هر ۵ دقیقه'
@@ -270,49 +298,36 @@ async function ensureRepo(owner, name) {
   }
 }
 
-async function setRepoSecret(owner, repo, secretName, secretValue) {
-  // دریافت public key
-  const keyData = await ghApi(`/repos/${owner}/${repo}/actions/secrets/public-key`);
-  // رمزنگاری ساده با Web Crypto ممکن است پیچیده باشد؛ توکن را داخل bot.py هم می‌گذاریم
-  // پس secret اختیاری است — bot.py از TOKEN داخل فایل هم می‌خواند
-  return keyData;
-}
-
 async function deployRubikaBot(bot) {
   const owner = localStorage.getItem('gh_owner') || 'r82146777-art';
   const repoName = 'rubika-id-bot';
   const status = document.getElementById('deploy-status');
   status.style.color = '#38bdf8';
-  status.textContent = 'در حال ساخت/به‌روزرسانی مخزن...';
+  status.textContent = 'در حال آماده‌سازی مخزن...';
 
   await ensureRepo(owner, repoName);
-  status.textContent = 'آپلود bot.py ...';
-  const py = buildRubikaIdBotPy(bot.token);
-  await putFile(owner, repoName, 'bot.py', py, 'deploy bot from panel');
-  status.textContent = 'آپلود workflow ...';
-  await putFile(owner, repoName, '.github/workflows/run.yml', WORKFLOW_YML.replace(/\\\\/g, '\\'), 'deploy workflow');
+  status.textContent = 'آپلود کد ربات...';
+  await putFile(owner, repoName, 'bot.py', buildRubikaBotPy(bot.token), 'deploy bot from panel');
+  status.textContent = 'آپلود workflow...';
+  await putFile(owner, repoName, '.github/workflows/run.yml', WORKFLOW_YML, 'deploy workflow');
   await putFile(owner, repoName, 'state.json', JSON.stringify({ offset_id: null, processed: [] }, null, 2), 'init state');
-  await putFile(owner, repoName, 'requirements.txt', 'requests>=2.31.0\n', 'requirements');
+  await putFile(owner, repoName, 'requirements.txt', 'requests>=2.31.0\\n', 'requirements');
 
-  // تریگر دستی workflow
-  status.textContent = 'اجرای اول workflow ...';
+  status.textContent = 'اجرای اول...';
   try {
-    await ghApi(`/repos/${owner}/${repoName}/actions/workflows/run.yml/dispatches`, 'POST', { ref: 'main' });
-  } catch (e) {
-    // گاهی نام فایل workflow برای dispatch فرق دارد
-    try {
-      const wfs = await ghApi(`/repos/${owner}/${repoName}/actions/workflows`);
-      const wf = (wfs.workflows || []).find(w => w.path && w.path.includes('run.yml'));
-      if (wf) await ghApi(`/repos/${owner}/${repoName}/actions/workflows/${wf.id}/dispatches`, 'POST', { ref: 'main' });
-    } catch (e2) {
-      console.warn(e2);
+    const wfs = await ghApi('/repos/' + owner + '/' + repoName + '/actions/workflows');
+    const wf = (wfs.workflows || []).find(w => (w.path || '').includes('run.yml'));
+    if (wf) {
+      await ghApi('/repos/' + owner + '/' + repoName + '/actions/workflows/' + wf.id + '/dispatches', 'POST', { ref: 'main' });
     }
+  } catch (e) {
+    console.warn(e);
   }
 
   bot.deployed = true;
-  bot.repoUrl = `https://github.com/${owner}/${repoName}`;
+  bot.repoUrl = 'https://github.com/' + owner + '/' + repoName;
   status.style.color = '#34d399';
-  status.textContent = '✅ ربات فعال شد. هر ۵ دقیقه پیام‌ها را چک می‌کند. مخزن: ' + bot.repoUrl;
+  status.textContent = '✅ ربات فعال شد — هر ۵ دقیقه پیام‌ها را چک می‌کند. ' + bot.repoUrl;
   return bot;
 }
 
@@ -326,15 +341,15 @@ document.getElementById('btn-save-bot').addEventListener('click', async () => {
 
   if (platform === 'rubika') {
     if (!localStorage.getItem('gh_token')) {
-      alert('اول از تب «تنظیمات گیت‌هاب» توکن گیت‌هاب را ذخیره کنید.');
+      alert('اول تب «تنظیمات گیت‌هاب» را باز کنید و توکن گیت‌هاب را ذخیره کنید.');
       return;
     }
     const bot = {
       id: generateId(),
-      platform,
-      token,
-      allowedIds,
-      code,
+      platform: platform,
+      token: token,
+      allowedIds: allowedIds,
+      code: code,
       createdAt: new Date().toISOString(),
       deployed: false
     };
@@ -346,23 +361,22 @@ document.getElementById('btn-save-bot').addEventListener('click', async () => {
       localStorage.setItem('bots', JSON.stringify(bots));
       renderBots();
       clearBotForm();
-      alert('ربات روی گیت‌هاب استارت شد.\nهر ۵ دقیقه پیام‌های روبیکا را چک می‌کند و جواب می‌دهد.');
+      alert('ربات روی گیت‌هاب استارت شد.\\nهر ۵ دقیقه پیام‌های خصوصی روبیکا را چک می‌کند و جواب می‌دهد.\\n(به کانال وصل نیست — فقط پاسخ به پیام شما)');
     } catch (e) {
       document.getElementById('deploy-status').style.color = '#f87171';
       document.getElementById('deploy-status').textContent = 'خطا: ' + e.message;
-      alert('خطا در استارت: ' + e.message);
+      alert('خطا: ' + e.message);
     }
     btn.disabled = false;
     return;
   }
 
-  // تلگرام / بله — فقط ذخیره محلی
-  const bot = { id: generateId(), platform, token, allowedIds, code, createdAt: new Date().toISOString() };
+  const bot = { id: generateId(), platform: platform, token: token, allowedIds: allowedIds, code: code, createdAt: new Date().toISOString() };
   bots.push(bot);
   localStorage.setItem('bots', JSON.stringify(bots));
   renderBots();
   clearBotForm();
-  alert('برای تلگرام/بله فعلاً فقط ذخیره می‌شود. ربات زنده روی گیت‌هاب برای روبیکا فعال است.');
+  alert('برای تلگرام/بله فعلاً فقط در لیست ذخیره می‌شود. استارت زنده برای روبیکا است.');
 });
 
 document.getElementById('btn-clear-bot').addEventListener('click', clearBotForm);
@@ -375,7 +389,7 @@ function clearBotForm() {
 document.getElementById('btn-save-site').addEventListener('click', () => {
   let code = document.getElementById('site-code').value.trim();
   if (!code) { alert('کد سایت را وارد کنید'); return; }
-  const site = { id: generateId(), owner: document.getElementById('site-owner').value.trim(), code };
+  const site = { id: generateId(), owner: document.getElementById('site-owner').value.trim(), code: code };
   sites.push(site);
   localStorage.setItem('sites', JSON.stringify(sites));
   renderSites();
@@ -393,10 +407,6 @@ function deleteSite(id) {
   localStorage.setItem('sites', JSON.stringify(sites));
   renderSites();
 }
-
-document.getElementById('bot-modal-close').addEventListener('click', () => {
-  document.getElementById('bot-modal').classList.add('hidden');
-});
 
 renderBots();
 renderSites();
